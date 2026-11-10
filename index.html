@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة التجمع المدني العراقي</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e40af">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Noto Sans Arabic', sans-serif; }</style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
+  <header class="bg-blue-800 text-white p-4 shadow-md sticky top-0 z-40">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-800 font-bold text-xl shadow">🏛️</div>
+        <div>
+          <h1 class="font-bold text-base leading-tight">بوابة التجمع المدني العراقي</h1>
+          <p class="text-xs text-blue-200">الاستمارة والمتابعة الإلكترونية الموحدة</p>
+        </div>
+      </div>
+      <a href="director.html" class="text-xs bg-blue-900 border border-blue-400/40 text-blue-100 px-3 py-1.5 rounded-lg">لوحة الإدارة 🔐</a>
+    </div>
+  </header>
+
+  <div class="max-w-xl mx-auto px-4 mt-4">
+    <div class="grid grid-cols-2 gap-2 bg-slate-200 p-1 rounded-xl">
+      <button id="tabSubmitBtn" onclick="switchTab('submit')" class="py-2.5 text-xs font-bold rounded-lg bg-white text-blue-800 shadow-sm">تقديم استمارة جديدة</button>
+      <button id="tabTrackBtn" onclick="switchTab('track')" class="py-2.5 text-xs font-bold rounded-lg text-slate-600">الاستعلام ومتابعة الطلب</button>
+    </div>
+  </div>
+
+  <main class="max-w-xl mx-auto px-4 mt-4">
+    <section id="sectionSubmit" class="space-y-4">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-800 text-sm mb-3">📌 نوع المعاملة:</h2>
+        <div class="grid grid-cols-2 gap-2" id="requestTypes">
+          <button type="button" onclick="selectType(this, 'مقابلة المدير')" class="type-btn p-3 border rounded-xl text-xs font-bold text-center border-blue-600 bg-blue-50 text-blue-800">مقابلة المدير</button>
+          <button type="button" onclick="selectType(this, 'مقابلة شخص آخر')" class="type-btn p-3 border rounded-xl text-xs font-bold text-center border-slate-200 bg-white text-slate-700">مقابلة شخص آخر</button>
+          <button type="button" onclick="selectType(this, 'تسجيل عضوية جديدة')" class="type-btn p-3 border rounded-xl text-xs font-bold text-center border-slate-200 bg-white text-slate-700">تسجيل عضوية جديدة</button>
+          <button type="button" onclick="selectType(this, 'حجز موعد')" class="type-btn p-3 border rounded-xl text-xs font-bold text-center border-slate-200 bg-white text-slate-700">حجز موعد</button>
+        </div>
+      </div>
+
+      <form id="citizenForm" onsubmit="submitCitizenForm(event)" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+        <div>
+          <label class="block font-semibold mb-1 text-xs">الاسم الثلاثي واللقب *</label>
+          <input type="text" id="fullName" required placeholder="مثال: حيدر كريم جاسم الساعدي" class="w-full border rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-blue-600">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold mb-1 text-xs">رقم الهاتف *</label>
+            <input type="tel" id="phone" required placeholder="07xxxxxxxx" class="w-full border rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-blue-600" dir="ltr">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-xs">تاريخ الولادة *</label>
+            <input type="date" id="birthDate" required class="w-full border rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-blue-600">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold mb-1 text-xs">محافظة الولادة *</label>
+            <select id="birthPlace" required class="w-full border rounded-xl p-2.5 text-xs outline-none bg-white">
+              <option value="">اختر المحافظة</option>
+              <option value="بغداد">بغداد</option>
+              <option value="البصرة">البصرة</option>
+              <option value="ميسان">ميسان</option>
+              <option value="ذي قار">ذي قار</option>
+              <option value="النجف الأشرف">النجف الأشرف</option>
+              <option value="كربلاء المقدسة">كربلاء المقدسة</option>
+              <option value="بابل">بابل</option>
+              <option value="واسط">واسط</option>
+              <option value="الديوانية">الديوانية</option>
+              <option value="المثنى">المثنى</option>
+              <option value="ديالى">ديالى</option>
+              <option value="صلاح الدين">صلاح الدين</option>
+              <option value="الأنبار">الأنبار</option>
+              <option value="كركوك">كركوك</option>
+              <option value="نينوى">نينوى</option>
+              <option value="أربيل">أربيل</option>
+              <option value="السليمانية">السليمانية</option>
+              <option value="دهوك">دهوك</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-xs">رقم البطاقة الوطنية *</label>
+            <input type="text" id="nationalId" required placeholder="12 رقم" class="w-full border rounded-xl p-2.5 text-xs outline-none" dir="ltr">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1 text-xs">عنوان السكن الحالي *</label>
+          <input type="text" id="address" required placeholder="المحافظة، القضاء، الحي، أقرب نقطة دالة" class="w-full border rounded-xl p-2.5 text-xs outline-none">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1 text-xs">الدائرة التابعة *</label>
+          <select id="department" required class="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-medium">
+            <option value="">اختر الدائرة</option>
+            <option value="دائرة العرضات">دائرة العرضات</option>
+            <option value="دائرة حي المعلمين">دائرة حي المعلمين</option>
+            <option value="دائرة الكفاءات">دائرة الكفاءات</option>
+            <option value="دائرة الدبيسات">دائرة الدبيسات</option>
+            <option value="دائرة ابو رمانه">دائرة ابو رمانه</option>
+            <option value="دائرة حي العسكري">دائرة حي العسكري</option>
+            <option value="دائرة الماجدية">دائرة الماجدية</option>
+            <option value="دائرة عواشة">دائرة عواشة</option>
+            <option value="دائرة الصحفيين">دائرة الصحفيين</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1 text-xs">ملاحظات إضافية (اختياري)</label>
+          <textarea id="notes" rows="2" placeholder="اكتب أي تفاصيل أخرى..." class="w-full border rounded-xl p-2.5 text-xs outline-none"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-blue-800 text-white font-bold py-3 rounded-xl text-sm shadow-md hover:bg-blue-900 transition">إرسال وحفظ المعاملة 🚀</button>
+      </form>
+    </section>
+
+    <section id="sectionTrack" class="space-y-4 hidden">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-800 text-sm mb-2">🔍 استعلام عن طلب سابق:</h2>
+        <div class="flex gap-2">
+          <input type="text" id="trackInput" placeholder="أدخل رقم المعاملة أو رقم هاتفك" class="flex-1 border rounded-xl p-2.5 text-xs outline-none" dir="ltr">
+          <button onclick="searchRequest()" class="bg-blue-800 text-white px-4 rounded-xl text-xs font-bold">بحث</button>
+        </div>
+      </div>
+      <div id="trackResult" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3"></div>
+    </section>
+  </main>
+
+  <div id="successModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto">✓</div>
+      <h3 class="font-bold text-slate-800 text-base">تم إرسال وحفظ طلبك بنجاح!</h3>
+      <div class="bg-slate-100 border p-3 rounded-xl">
+        <span class="text-xs text-slate-500 block mb-1">رقم المعاملة:</span>
+        <span id="modalReqId" class="font-mono font-bold text-blue-800 text-lg"></span>
+      </div>
+      <button onclick="document.getElementById('successModal').classList.add('hidden')" class="w-full bg-blue-800 text-white py-2.5 rounded-xl text-xs font-bold">حسناً، تم الحفظ</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedTypeVal = 'مقابلة المدير';
+    function selectType(btn, val) {
+      selectedTypeVal = val;
+      document.querySelectorAll('.type-btn').forEach(b => {
+        b.className = 'type-btn p-3 border rounded-xl text-xs font-bold text-center border-slate-200 bg-white text-slate-700';
+      });
+      btn.className = 'type-btn p-3 border rounded-xl text-xs font-bold text-center border-blue-600 bg-blue-50 text-blue-800';
+    }
+
+    function switchTab(tab) {
+      const sSubmit = document.getElementById('sectionSubmit');
+      const sTrack = document.getElementById('sectionTrack');
+      const bSubmit = document.getElementById('tabSubmitBtn');
+      const bTrack = document.getElementById('tabTrackBtn');
+      if(tab === 'submit') {
+        sSubmit.classList.remove('hidden');
+        sTrack.classList.add('hidden');
+        bSubmit.className = 'py-2.5 text-xs font-bold rounded-lg bg-white text-blue-800 shadow-sm';
+        bTrack.className = 'py-2.5 text-xs font-bold rounded-lg text-slate-600';
+      } else {
+        sSubmit.classList.add('hidden');
+        sTrack.classList.remove('hidden');
+        bTrack.className = 'py-2.5 text-xs font-bold rounded-lg bg-white text-blue-800 shadow-sm';
+        bSubmit.className = 'py-2.5 text-xs font-bold rounded-lg text-slate-600';
+      }
+    }
+
+    function submitCitizenForm(e) {
+      e.preventDefault();
+      const reqId = 'IRQ-' + Math.floor(100000 + Math.random() * 900000);
+      const reqData = {
+        id: reqId,
+        type: selectedTypeVal,
+        fullName: document.getElementById('fullName').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        birthDate: document.getElementById('birthDate').value,
+        birthPlace: document.getElementById('birthPlace').value,
+        nationalId: document.getElementById('nationalId').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        department: document.getElementById('department').value,
+        notes: document.getElementById('notes').value.trim(),
+        status: 'قيد المراجعة',
+        responseNote: 'طلبك قيد التدقيق وسيتم تحديد موعد لك قريباً.',
+        createdAt: new Date().toISOString()
+      };
+      let localRequests = JSON.parse(localStorage.getItem('iraq_civil_requests') || '[]');
+      localRequests.unshift(reqData);
+      localStorage.setItem('iraq_civil_requests', JSON.stringify(localRequests));
+
+      document.getElementById('modalReqId').innerText = reqId;
+      document.getElementById('successModal').classList.remove('hidden');
+      document.getElementById('citizenForm').reset();
+    }
+
+    function searchRequest() {
+      const q = document.getElementById('trackInput').value.trim();
+      const resDiv = document.getElementById('trackResult');
+      if(!q) return alert('يرجى إدخال رقم الطلب أو رقم الهاتف');
+      const localRequests = JSON.parse(localStorage.getItem('iraq_civil_requests') || '[]');
+      const found = localRequests.find(r => r.id === q || r.phone === q);
+      resDiv.classList.remove('hidden');
+      if(found) {
+        resDiv.innerHTML = `
+          <div class="border-b pb-2 flex justify-between items-center">
+            <span class="font-bold text-xs text-slate-700">${found.fullName}</span>
+            <span class="px-2.5 py-1 text-xs rounded-full border font-bold bg-amber-100 text-amber-800 border-amber-300">${found.status}</span>
+          </div>
+          <div class="text-xs space-y-1 text-slate-600 mt-2">
+            <p><strong>نوع المعاملة:</strong> ${found.type}</p>
+            <p><strong>الدائرة:</strong> ${found.department}</p>
+            <p><strong>رقم الطلب:</strong> <span class="font-mono font-bold text-blue-700">${found.id}</span></p>
+            <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl mt-2 text-blue-900">
+              <strong>رد الإدارة:</strong> ${found.responseNote}
+            </div>
+          </div>
+        `;
+      } else {
+        resDiv.innerHTML = `<p class="text-xs text-rose-600 text-center py-2">عذراً، لم يتم العثور على طلب مطابق.</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
