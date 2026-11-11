@@ -3,213 +3,524 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة المدير - التجمع المدني العراقي</title>
-  <meta name="theme-color" content="#1e3a8a">
+  <title>لوحة إدارة المدير - بوابة الأنصار الشبابي</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1528">
+  <!-- Tailwind CSS & Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>body { font-family: 'Noto Sans Arabic', sans-serif; }</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      background-color: #070d18;
+      color: #f1f5f9;
+    }
+    .bg-pattern {
+      background-image: radial-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen pb-16">
+<body class="min-h-screen flex flex-col pb-16 bg-pattern selection:bg-emerald-500 selection:text-white">
 
-  <!-- شاشة قفل المدير برمز سري -->
-  <div id="pinScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-xs w-full p-6 text-center space-y-4 shadow-2xl">
-      <div class="w-16 h-16 bg-blue-100 text-blue-900 rounded-full flex items-center justify-center text-3xl mx-auto">🔐</div>
-      <div>
-        <h2 class="font-bold text-slate-800 text-base">دخول المدير المصرح</h2>
-        <p class="text-xs text-slate-500 mt-1">الرمز الافتراضي: 1234</p>
+  <!-- Password Protected Login Modal -->
+  <div id="loginOverlay" class="fixed inset-0 z-50 bg-[#070d18]/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-[#111e38] to-[#0b1528] border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl">
+        🔐
       </div>
-      <input type="password" id="pinInput" maxlength="6" placeholder="أدخل الرمز السري" class="w-full text-center tracking-widest text-lg font-bold border-2 border-slate-300 rounded-xl p-2.5 outline-none focus:border-blue-700" dir="ltr">
-      <button onclick="checkPin()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-2.5 rounded-xl text-xs transition">فتح لوحة التحكم</button>
-      <a href="index.html" class="block text-xs text-slate-400 hover:text-slate-600">العودة لبرنامج الضيوف</a>
+      <div>
+        <h2 class="text-xl font-black text-white">تسجيل دخول المدير</h2>
+        <p class="text-xs text-slate-400 mt-1">بوابة الأنصار الشبابي • إدارة الدائرة والطلبات</p>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <input type="password" id="directorPass" placeholder="أدخل كلمة المرور" class="w-full bg-[#070d18] border border-slate-700 rounded-xl px-4 py-3 text-center text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <button onclick="checkDirectorLogin()" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-900/30">
+          دخول لوحة التحكم
+        </button>
+        <p id="loginError" class="text-xs text-red-400 hidden font-bold">كلمة المرور غير صحيحة، حاول مجدداً</p>
+      </div>
+      <a href="index.html" class="inline-block text-xs text-slate-500 hover:text-slate-300 transition pt-2">← العودة لبوابة المواطنين</a>
     </div>
   </div>
 
-  <!-- رأس لوحة المدير -->
-  <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-40">
-    <div class="max-w-xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-900 font-bold text-xl shadow">🏛️</div>
-        <div>
-          <h1 class="font-bold text-base leading-tight">لوحة تحكم المدير</h1>
-          <p class="text-xs text-blue-200">إدارة طلبات المواطنين والمقابلات</p>
+  <!-- Director Dashboard Container (Hidden until logged in) -->
+  <div id="dashboardApp" class="hidden flex-1 flex flex-col">
+
+    <!-- Top Header -->
+    <header class="sticky top-0 z-40 bg-[#0b1528]/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-lg">
+      <div class="max-w-5xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xl">
+            🏛️
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h1 class="font-black text-sm text-white">لوحة تحكم المدير والمسؤول</h1>
+            </div>
+            <p class="text-[10px] text-slate-400">إدارة معاملات الدوائر • الأنصار الشبابي</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a href="index.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 font-semibold transition">
+            <span>👤</span>
+            <span>بوابة المواطن</span>
+          </a>
+          <button onclick="directorLogout()" class="text-xs bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/40 px-3 py-1.5 rounded-lg font-bold transition">
+            خروج
+          </button>
         </div>
       </div>
-      <a href="index.html" class="text-xs bg-blue-950 border border-blue-400/30 text-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-800 transition">بوابة الضيوف ↗</a>
-    </div>
-  </header>
+    </header>
 
-  <main class="max-w-xl mx-auto px-4 mt-4 space-y-4">
-    <!-- إحصائيات سريعة -->
-    <div class="grid grid-cols-3 gap-2">
-      <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 text-center">
-        <span class="text-xs text-slate-500 block">الإجمالي</span>
-        <span id="statTotal" class="text-lg font-bold text-blue-900">0</span>
-      </div>
-      <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 text-center">
-        <span class="text-xs text-slate-500 block">قيد المراجعة</span>
-        <span id="statPending" class="text-lg font-bold text-amber-600">0</span>
-      </div>
-      <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 text-center">
-        <span class="text-xs text-slate-500 block">تمت الموافقة</span>
-        <span id="statApproved" class="text-lg font-bold text-emerald-600">0</span>
-      </div>
-    </div>
+    <!-- Main Workspace -->
+    <main class="max-w-5xl mx-auto w-full px-4 pt-5 space-y-5 flex-1">
 
-    <!-- تصفية وبحث -->
-    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex gap-2">
-      <input type="text" id="adminSearch" oninput="renderRequests()" placeholder="بحث بالاسم أو الهاتف أو الدائرة..." class="flex-1 border rounded-xl p-2 text-xs outline-none focus:ring-2 focus:ring-blue-700">
-      <button onclick="clearAllData()" class="text-xs text-rose-500 px-2 hover:bg-rose-50 rounded-lg" title="تفريغ تجريبي">مسح</button>
-    </div>
-
-    <!-- قائمة الطلبات الواردة -->
-    <div class="space-y-3" id="requestsContainer">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border text-center text-slate-400 text-xs">
-        جاري جلب الطلبات...
-      </div>
-    </div>
-  </main>
-
-  <!-- نافذة تعديل الرد وتحديد الموعد -->
-  <div id="actionModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-3 shadow-2xl">
-      <h3 class="font-bold text-slate-800 text-sm">تحديث حالة الطلب وتحديد موعد</h3>
-      <input type="hidden" id="activeReqId">
-
-      <div>
-        <label class="block text-xs font-semibold mb-1">تغيير الحالة:</label>
-        <select id="updateStatusSelect" class="w-full border rounded-xl p-2 text-xs outline-none bg-white">
-          <option value="مقبول ومحدد موعد">مقبول ومحدد موعد</option>
-          <option value="قيد المراجعة">قيد المراجعة</option>
-          <option value="اعتذار">اعتذار</option>
-        </select>
+      <!-- Statistics KPI Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-gradient-to-b from-[#111e38] to-[#0b1528] border border-slate-800 rounded-2xl p-4 shadow text-center">
+          <p class="text-[11px] text-slate-400 font-semibold">إجمالي الطلبات</p>
+          <p id="statTotal" class="text-2xl font-black text-white mt-1">0</p>
+        </div>
+        <div class="bg-gradient-to-b from-[#111e38] to-[#0b1528] border border-slate-800 rounded-2xl p-4 shadow text-center">
+          <p class="text-[11px] text-amber-400 font-semibold">قيد التدقيق</p>
+          <p id="statPending" class="text-2xl font-black text-amber-400 mt-1">0</p>
+        </div>
+        <div class="bg-gradient-to-b from-[#111e38] to-[#0b1528] border border-slate-800 rounded-2xl p-4 shadow text-center">
+          <p class="text-[11px] text-emerald-400 font-semibold">تمت الموافقة والإنجاز</p>
+          <p id="statApproved" class="text-2xl font-black text-emerald-400 mt-1">0</p>
+        </div>
+        <div class="bg-gradient-to-b from-[#111e38] to-[#0b1528] border border-slate-800 rounded-2xl p-4 shadow text-center">
+          <p class="text-[11px] text-rose-400 font-semibold">العاطلين عن العمل</p>
+          <p id="statUnemployed" class="text-2xl font-black text-rose-400 mt-1">0</p>
+        </div>
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold mb-1">الرد / تفاصيل الموعد:</label>
-        <textarea id="updateResponseText" rows="3" class="w-full border rounded-xl p-2 text-xs outline-none focus:ring-2 focus:ring-blue-700" placeholder="مثال: تم قبول طلبك، يرجى الحضور يوم الخميس الساعة 10 صباحاً إلى مقر التجمع..."></textarea>
+      <!-- Advanced Filter Toolbar -->
+      <div class="bg-white text-slate-900 rounded-2xl p-4 sm:p-5 shadow-xl border border-slate-100 space-y-3.5">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⚡</span>
+            <h3 class="font-extrabold text-sm text-slate-800">أدوات الفرز والتصفية الذكية</h3>
+          </div>
+          <!-- Quick Search -->
+          <div class="w-full sm:w-72">
+            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="بحث بالاسم، رقم الطلب، الهاتف، أو البطاقة..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <!-- 3 Filter Dropdowns in a Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <!-- 1. Department Filter -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">تصفية حسب الدائرة المعتمدة:</label>
+            <select id="filterDept" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="ALL">جميع الدوائر (السبع)</option>
+              <option value="دائرة العرضات">🏢 دائرة العرضات</option>
+              <option value="دائرة أم غربة">🏢 دائرة أم غربة</option>
+              <option value="دائرة القطاع">🏢 دائرة القطاع</option>
+              <option value="دائرة ابو رمانه">🏢 دائرة ابو رمانه</option>
+              <option value="دائرة حي العسكري">🏢 دائرة حي العسكري</option>
+              <option value="دائرة الماجدية">🏢 دائرة الماجدية</option>
+              <option value="دائرة عواشة">🏢 دائرة عواشة</option>
+            </select>
+          </div>
+
+          <!-- 2. Education Filter (Separated 3rd Intermediate & 6th Prep) -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">التحصيل الدراسي:</label>
+            <select id="filterEdu" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="ALL">جميع المؤهلات العلمية</option>
+              <option value="سادس إعدادي">🎓 سادس إعدادي (مستقل)</option>
+              <option value="ثالث متوسط">🏫 ثالث متوسط (مستقل)</option>
+              <option value="بكالوريوس">🏛️ بكالوريوس</option>
+              <option value="دبلوم (معهد)">📜 دبلوم (معهد)</option>
+              <option value="دراسات عليا">🎖️ دراسات عليا</option>
+              <option value="ابتدائي">🎒 ابتدائي</option>
+              <option value="يقرأ ويكتب / بدون شهادة">📖 بدون شهادة / يقرأ ويكتب</option>
+            </select>
+          </div>
+
+          <!-- 3. Employment Status Filter -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">الحالة الوظيفية:</label>
+            <select id="filterEmp" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="ALL">جميع الحالات الوظيفية</option>
+              <option value="عاطل عن العمل">🔍 عاطل عن العمل</option>
+              <option value="موظف قطاع حكومي">🏢 موظف حكومي</option>
+              <option value="موظف قطاع خاص">💼 موظف خاص</option>
+              <option value="كاسب / عمل حر">🛠️ كاسب / عمل حر</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quick Status Pills -->
+        <div class="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+          <span class="text-slate-500 text-[11px] font-bold">الحالة:</span>
+          <button onclick="setStatusFilter('ALL')" id="pill-ALL" class="status-pill px-3 py-1 rounded-lg font-bold bg-slate-900 text-white">الكل</button>
+          <button onclick="setStatusFilter('قيد')" id="pill-قيد" class="status-pill px-3 py-1 rounded-lg font-bold bg-slate-100 text-slate-700 hover:bg-slate-200">قيد المراجعة</button>
+          <button onclick="setStatusFilter('موافقة')" id="pill-موافقة" class="status-pill px-3 py-1 rounded-lg font-bold bg-slate-100 text-slate-700 hover:bg-slate-200">تمت الموافقة</button>
+          <button onclick="setStatusFilter('اعتذار')" id="pill-اعتذار" class="status-pill px-3 py-1 rounded-lg font-bold bg-slate-100 text-slate-700 hover:bg-slate-200">معتذر عنه</button>
+          <button onclick="resetAllFilters()" class="mr-auto text-[11px] text-emerald-600 hover:underline font-bold">إعادة ضبط الفلاتر 🔄</button>
+        </div>
       </div>
 
-      <div class="flex gap-2 pt-2">
-        <button onclick="saveReqUpdate()" class="flex-1 bg-blue-800 text-white py-2 rounded-xl text-xs font-bold hover:bg-blue-900 transition">حفظ وإرسال</button>
-        <button onclick="closeActionModal()" class="px-4 py-2 border rounded-xl text-xs text-slate-600">إلغاء</button>
-      </div>
-    </div>
+      <!-- Requests Cards List -->
+      <section class="space-y-3">
+        <div class="flex items-center justify-between text-xs px-1">
+          <h4 class="font-black text-slate-200 text-sm flex items-center gap-1.5">
+            <span>📋</span>
+            <span>قائمة الطلبات الواردة</span>
+            <span id="requestsCount" class="bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full text-[11px]">0</span>
+          </h4>
+          <button onclick="exportToCSV()" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 text-[11px] bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl transition">
+            <span>📥 تصدير كملف إكسل / CSV</span>
+          </button>
+        </div>
+
+        <div id="requestsListContainer" class="space-y-3">
+          <!-- Dynamic Request Cards Rendered Here -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+      لوحة إدارة بوابة الأنصار الشبابي • دائرة القطاع • نظام التوثيق والمتابعة المباشرة © 2026
+    </footer>
+
   </div>
 
+  <!-- JavaScript Application Logic -->
   <script>
-    const CORRECT_PIN = "1234";
+    const DIRECTOR_PASS = 'Mustafa Light';
+    let currentStatusFilter = 'ALL';
 
-    function checkPin() {
-      const pin = document.getElementById('pinInput').value;
-      if(pin === CORRECT_PIN) {
-        document.getElementById('pinScreen').classList.add('hidden');
-        renderRequests();
+    // Check Director Authentication
+    function checkDirectorLogin() {
+      const pass = document.getElementById('directorPass').value.trim();
+      const err = document.getElementById('loginError');
+
+      if (pass === DIRECTOR_PASS) {
+        sessionStorage.setItem('director_auth', 'true');
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('dashboardApp').classList.remove('hidden');
+        loadDirectorData();
       } else {
-        alert("الرمز السري غير صحيح!");
+        err.classList.remove('hidden');
       }
     }
 
-    function renderRequests() {
-      const list = JSON.parse(localStorage.getItem('iraq_civil_requests') || '[]');
-      const container = document.getElementById('requestsContainer');
-      const search = (document.getElementById('adminSearch').value || '').trim().toLowerCase();
+    function directorLogout() {
+      sessionStorage.removeItem('director_auth');
+      location.reload();
+    }
 
-      let filtered = list.filter(r => 
-        r.fullName.toLowerCase().includes(search) || 
-        r.phone.includes(search) || 
-        r.department.toLowerCase().includes(search) ||
-        r.id.toLowerCase().includes(search)
-      );
+    // Auto-login if previously verified in session
+    window.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('director_auth') === 'true') {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('dashboardApp').classList.remove('hidden');
+        loadDirectorData();
+      }
+    });
 
-      // تحديث الإحصائيات
-      document.getElementById('statTotal').innerText = list.length;
-      document.getElementById('statPending').innerText = list.filter(r => r.status.includes('قيد المراجعة')).length;
-      document.getElementById('statApproved').innerText = list.filter(r => r.status.includes('مقبول')).length;
+    // Local Storage Data Management
+    function getRequests() {
+      const stored = localStorage.getItem('citizen_requests');
+      if (stored) {
+        try { return JSON.parse(stored); } catch(e) { return []; }
+      }
+      return [
+        {
+          id: 'REQ-2026-891',
+          name: 'علي حسن كاظم المحمداوي',
+          phone: '07701234567',
+          birthDate: '1998-05-12',
+          birthGov: 'ميسان',
+          nationalId: '199812345678',
+          education: 'سادس إعدادي',
+          employment: 'كاسب / عمل حر',
+          address: 'ميسان - العمارة - حي المعلمين القديم',
+          department: 'دائرة القطاع',
+          type: 'معاملة حكومية',
+          details: 'طلب متابعة تجديد الرخصة الحرفية وتسهيل إجراءات القيد البلدي لدى الدائرة.',
+          status: 'قيد التدقيق والإنجاز',
+          date: '2026-03-28'
+        },
+        {
+          id: 'REQ-2026-442',
+          name: 'سجاد كريم جاسم الساعدي',
+          phone: '07809876543',
+          birthDate: '2002-11-20',
+          birthGov: 'بغداد',
+          nationalId: '200298765432',
+          education: 'ثالث متوسط',
+          employment: 'عاطل عن العمل',
+          address: 'بغداد - قطاع 24 - قرب جامع الأنصار',
+          department: 'دائرة أم غربة',
+          type: 'مساعدة إنسانية وعلاجية',
+          details: 'طلب دعم طبي عاجل لإجراء عملية جراحية صغرى ومساعدة في تكاليف العلاج.',
+          status: 'تمت الموافقة والإحالة',
+          date: '2026-03-27'
+        },
+        {
+          id: 'REQ-2026-310',
+          name: 'كرار حيدر نعمة البهادلي',
+          phone: '07715554433',
+          birthDate: '1995-02-14',
+          birthGov: 'البصرة',
+          nationalId: '199544332211',
+          education: 'بكالوريوس',
+          employment: 'موظف قطاع خاص',
+          address: 'البصرة - حي الحسين - شارع المحافظة',
+          department: 'دائرة العرضات',
+          type: 'حجز مقابلة النائب أو المسؤول',
+          details: 'طرح مقترح تطوير شبكة المياه والخدمات البلدية في المنطقة بحضور الوجهاء.',
+          status: 'قيد التدقيق والإنجاز',
+          date: '2026-03-26'
+        }
+      ];
+    }
 
-      if(filtered.length === 0) {
+    function saveRequests(list) {
+      localStorage.setItem('citizen_requests', JSON.stringify(list));
+      loadDirectorData();
+    }
+
+    // Load & Calculate Stats
+    function loadDirectorData() {
+      const requests = getRequests();
+
+      // Stats
+      document.getElementById('statTotal').innerText = requests.length;
+      document.getElementById('statPending').innerText = requests.filter(r => (r.status || '').includes('قيد') || (r.status || '').includes('مراجعة')).length;
+      document.getElementById('statApproved').innerText = requests.filter(r => (r.status || '').includes('موافقة') || (r.status || '').includes('منجز')).length;
+      document.getElementById('statUnemployed').innerText = requests.filter(r => (r.employment || '').includes('عاطل')).length;
+
+      applyFilters();
+    }
+
+    // Set Status Filter Pill
+    function setStatusFilter(status) {
+      currentStatusFilter = status;
+      document.querySelectorAll('.status-pill').forEach(btn => {
+        btn.classList.replace('bg-slate-900', 'bg-slate-100');
+        btn.classList.replace('text-white', 'text-slate-700');
+      });
+      const active = document.getElementById('pill-' + status);
+      if (active) {
+        active.classList.replace('bg-slate-100', 'bg-slate-900');
+        active.classList.replace('text-slate-700', 'text-white');
+      }
+      applyFilters();
+    }
+
+    function resetAllFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterDept').value = 'ALL';
+      document.getElementById('filterEdu').value = 'ALL';
+      document.getElementById('filterEmp').value = 'ALL';
+      setStatusFilter('ALL');
+    }
+
+    // Apply All Combinations of Filters
+    function applyFilters() {
+      const search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const dept = document.getElementById('filterDept').value;
+      const edu = document.getElementById('filterEdu').value;
+      const emp = document.getElementById('filterEmp').value;
+
+      const all = getRequests();
+
+      const filtered = all.filter(r => {
+        // Search query
+        const matchSearch = !search ||
+          (r.name && r.name.toLowerCase().includes(search)) ||
+          (r.id && r.id.toLowerCase().includes(search)) ||
+          (r.phone && r.phone.includes(search)) ||
+          (r.nationalId && r.nationalId.includes(search)) ||
+          (r.details && r.details.toLowerCase().includes(search));
+
+        // Dept
+        const matchDept = (dept === 'ALL') || (r.department === dept);
+
+        // Edu
+        const matchEdu = (edu === 'ALL') || (r.education === edu);
+
+        // Emp
+        const matchEmp = (emp === 'ALL') || (r.employment === emp);
+
+        // Status
+        let matchStatus = true;
+        if (currentStatusFilter !== 'ALL') {
+          matchStatus = (r.status || '').includes(currentStatusFilter);
+        }
+
+        return matchSearch && matchDept && matchEdu && matchEmp && matchStatus;
+      });
+
+      renderRequests(filtered);
+    }
+
+    // Render Cards in Container
+    function renderRequests(list) {
+      const container = document.getElementById('requestsListContainer');
+      document.getElementById('requestsCount').innerText = list.length;
+
+      if (!list.length) {
         container.innerHTML = `
-          <div class="bg-white p-8 rounded-2xl shadow-sm border text-center text-slate-400 text-xs">
-            لا توجد طلبات واردة حالياً.
+          <div class="bg-white rounded-2xl p-8 text-center border border-slate-100 text-slate-500 shadow space-y-2">
+            <span class="text-3xl block">🔍</span>
+            <p class="font-extrabold text-sm text-slate-700">لا توجد طلبات تطابق خيارات التصفية المحددة</p>
+            <p class="text-xs text-slate-400">جرب تغيير كلمات البحث أو إعادة ضبط الفلاتر من الأعلى.</p>
           </div>
         `;
         return;
       }
 
-      container.innerHTML = filtered.map(item => {
-        let badgeColor = item.status.includes('مقبول') ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : (item.status.includes('اعتذار') ? 'bg-rose-100 text-rose-800 border-rose-300' : 'bg-amber-100 text-amber-800 border-amber-300');
-        let cleanPhone = item.phone.startsWith('0') ? '964' + item.phone.substring(1) : item.phone;
-        let whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('السلام عليكم ' + item.fullName + '، بخصوص طلبك في التجمع المدني العراقي: ' + item.responseNote)}`;
+      container.innerHTML = list.map(req => {
+        let statusBadge = 'bg-amber-100 text-amber-800 border-amber-300';
+        if ((req.status || '').includes('موافقة') || (req.status || '').includes('منجز')) {
+          statusBadge = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        } else if ((req.status || '').includes('اعتذار') || (req.status || '').includes('رفض')) {
+          statusBadge = 'bg-rose-100 text-rose-800 border-rose-300';
+        }
 
         return `
-          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-bold text-slate-800 text-sm">${item.fullName}</h3>
-                <span class="text-xs text-blue-700 font-medium">${item.type}</span> • <span class="text-xs text-slate-500">${item.department}</span>
+          <div class="bg-white text-slate-900 rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 space-y-3.5 transition hover:shadow-xl">
+            
+            <!-- Header Row -->
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">#</span>
+                <div>
+                  <h4 class="font-black text-sm text-slate-900">${req.name}</h4>
+                  <span class="text-[11px] font-bold text-slate-400 font-mono">${req.id} • ${req.date || 'اليوم'}</span>
+                </div>
               </div>
-              <span class="px-2 py-0.5 text-xs rounded-full border font-bold ${badgeColor}">${item.status}</span>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold border ${statusBadge}">
+                  ${req.status}
+                </span>
+                <button onclick="deleteRequest('${req.id}')" title="حذف الطلب" class="text-slate-400 hover:text-red-600 p-1 rounded-lg transition text-sm">
+                  🗑️
+                </button>
+              </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-1 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <p><strong>الهاتف:</strong> <span dir="ltr">${item.phone}</span></p>
-              <p><strong>البطاقة الوطنية:</strong> ${item.nationalId}</p>
-              <p><strong>المحافظة:</strong> ${item.birthPlace}</p>
-              <p><strong>المواليد:</strong> ${item.birthDate}</p>
-              <p class="col-span-2"><strong>السكن:</strong> ${item.address}</p>
-              ${item.notes ? `<p class="col-span-2 text-slate-500 italic"><strong>ملاحظات:</strong> ${item.notes}</p>` : ''}
+            <!-- Details Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <div>
+                <span class="block text-[10px] text-slate-400 font-semibold">الدائرة المعنية:</span>
+                <span class="font-bold text-slate-800">${req.department || 'دائرة القطاع'}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 font-semibold">التحصيل الدراسي:</span>
+                <span class="font-extrabold text-emerald-700">${req.education || 'غير محدد'}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 font-semibold">الحالة الوظيفية:</span>
+                <span class="font-extrabold text-indigo-700">${req.employment || 'غير محدد'}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 font-semibold">رقم البطاقة الموحدة:</span>
+                <span class="font-mono text-slate-700 font-bold">${req.nationalId || 'مرفق'}</span>
+              </div>
+              <div class="col-span-2 pt-1 border-t border-slate-200/60 mt-1">
+                <span class="block text-[10px] text-slate-400 font-semibold">العنوان السكني بالتفصيل:</span>
+                <span class="text-slate-700 font-medium">${req.address || (req.birthGov + ' - العراق')}</span>
+              </div>
+              <div class="col-span-2 pt-1 border-t border-slate-200/60 mt-1">
+                <span class="block text-[10px] text-slate-400 font-semibold">نوع الطلب / المعاملة:</span>
+                <span class="font-bold text-slate-800">${req.type || 'معاملة رسمية'}</span>
+              </div>
             </div>
 
-            <div class="p-2 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-900">
-              <strong>رد الإدارة الحالي:</strong> ${item.responseNote}
+            <!-- Description Body -->
+            <div class="text-xs text-slate-600 leading-relaxed bg-amber-50/50 border border-amber-100 p-3 rounded-xl">
+              <strong class="text-slate-800 block text-[11px] mb-0.5">تفاصيل وشرح الطلب:</strong>
+              ${req.details || 'لا يوجد شرح إضافي مرفق.'}
             </div>
 
-            <div class="flex items-center gap-2 pt-1">
-              <button onclick="openActionModal('${item.id}', '${item.status}', '${item.responseNote.replace(/'/g, "\\'")}')" class="flex-1 bg-slate-800 text-white py-2 rounded-xl text-xs font-semibold hover:bg-slate-900 transition">
-                ✏️ تعديل الرد والموعد
-              </button>
-              <a href="${whatsappUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition">
-                <span>واتساب</span> 💬
+            <!-- Action Toolbar for Director -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <a href="tel:${req.phone}" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition">
+                <span>اتصال بالمواطن</span>
+                <span>📞 ${req.phone}</span>
               </a>
+
+              <div class="flex items-center gap-1.5">
+                <button onclick="updateStatus('${req.id}', 'تمت الموافقة والإحالة')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-xl transition">
+                  ✓ موافقة وإحالة
+                </button>
+                <button onclick="updateStatus('${req.id}', 'قيد التدقيق والإنجاز')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] px-3 py-1.5 rounded-xl transition">
+                  ⏳ قيد التدقيق
+                </button>
+                <button onclick="updateStatus('${req.id}', 'معتذر عنه / استبعاد')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-xl transition">
+                  ✕ اعتذار
+                </button>
+              </div>
             </div>
+
           </div>
         `;
       }).join('');
     }
 
-    function openActionModal(id, status, note) {
-      document.getElementById('activeReqId').value = id;
-      document.getElementById('updateStatusSelect').value = status.includes('مقبول') ? 'مقبول ومحدد موعد' : (status.includes('اعتذار') ? 'اعتذار' : 'قيد المراجعة');
-      document.getElementById('updateResponseText').value = note;
-      document.getElementById('actionModal').classList.remove('hidden');
-    }
-
-    function closeActionModal() {
-      document.getElementById('actionModal').classList.add('hidden');
-    }
-
-    function saveReqUpdate() {
-      const id = document.getElementById('activeReqId').value;
-      const newStatus = document.getElementById('updateStatusSelect').value;
-      const newNote = document.getElementById('updateResponseText').value.trim();
-
-      let list = JSON.parse(localStorage.getItem('iraq_civil_requests') || '[]');
-      let item = list.find(r => r.id === id);
-      if(item) {
-        item.status = newStatus;
-        item.responseNote = newNote || 'تم تحديث حالة طلبك من قبل الإدارة.';
-        localStorage.setItem('iraq_civil_requests', JSON.stringify(list));
+    // Update Status of a Request
+    function updateStatus(id, newStatus) {
+      let list = getRequests();
+      const index = list.findIndex(r => r.id === id);
+      if (index !== -1) {
+        list[index].status = newStatus;
+        saveRequests(list);
       }
-      closeActionModal();
-      renderRequests();
     }
 
-    function clearAllData() {
-      if(confirm('هل تريد مسح جميع البيانات للتجربة؟')) {
-        localStorage.removeItem('iraq_civil_requests');
-        renderRequests();
+    // Delete Request
+    function deleteRequest(id) {
+      if (confirm('هل أنت متأكد من رغبتك بحذف هذا الطلب نهائياً من النظام؟')) {
+        let list = getRequests();
+        list = list.filter(r => r.id !== id);
+        saveRequests(list);
       }
+    }
+
+    // Export to Excel / CSV
+    function exportToCSV() {
+      const list = getRequests();
+      if (!list.length) {
+        alert('لا توجد بيانات للتصدير.');
+        return;
+      }
+
+      let csv = "\uFEFFرقم الطلب,الاسم الرباعي,رقم الهاتف,التحصيل الدراسي,الحالة الوظيفية,الدائرة,نوع المعاملة,الحالة,التاريخ\n";
+      list.forEach(r => {
+        csv += `"${r.id}","${r.name}","${r.phone}","${r.education || ''}","${r.employment || ''}","${r.department || ''}","${r.type || ''}","${r.status || ''}","${r.date || ''}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `طلبات_المواطنين_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
     }
   </script>
 </body>
 </html>
+ 
